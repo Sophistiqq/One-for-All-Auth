@@ -4,11 +4,36 @@ import { validator } from "./plugins/authValidator";
 
 
 export const auth = new Elysia()
+  // The auth middleware is required for all routes that require authentication, just apply isAuth: true
   .use(validator)
+  .post('/auth/register', async ({ body, status }) => {
+    const { username, password, email } = body;
+    try {
+      const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
+      if (user[0]) return status(409, "User already exists");
+
+      const hashedPassword = await Bun.password.hash(password);
+      const newUser = {
+        username,
+        password: hashedPassword,
+        email
+      }
+      await sqlite`INSERT INTO users ${sqlite(newUser)}`
+      return status(201, { message: "Register Success" });
+    } catch (err) {
+      return status(500, { message: "Internal Server Error" });
+    }
+  }, {
+    body: t.Object({
+      username: t.String({ minLength: 6 }),
+      password: t.String({ minLength: 6 }),
+      email: t.String({ format: "email" })
+    })
+  })
   .post("/auth/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
     const { username, password } = body;
     try {
-      const users = await sqlite`SELECT id, username, role, password, email FROM users WHERE username = ${username}`;
+      const users = await sqlite`SELECT id, username, password, email FROM admin_table WHERE username = ${username}`;
       const user = users[0];
       if (!user) {
         return status(404, "User not found")
@@ -44,9 +69,11 @@ export const auth = new Elysia()
       password: t.String({ minLength: 1 })
     })
   })
+
+  // user is from the auth middleware, it contains user's id - Check the middleware authValidator for more info
   .get('/auth/me', async ({ status, user }) => {
     try {
-      const users = await sqlite`SELECT id, username, role, email FROM users WHERE id = ${user}`
+      const users = await sqlite`SELECT id, username, email FROM admin_table WHERE id = ${user}`
       if (!users[0]) return status(401, { message: "User not found" })
 
       return status(200, users[0])
@@ -59,35 +86,9 @@ export const auth = new Elysia()
       auth_cookie: t.String()
     }),
   })
-  .get('/auth/logout', async ({ cookie: { auth_cookie }, status }) => {
+  .post('/auth/logout', async ({ cookie: { auth_cookie }, status }) => {
     auth_cookie.remove()
     return status(200, { message: "Logout Success" })
   }, {
     isAuth: true
-  })
-  .post('/auth/register', async ({ body, status }) => {
-    const { username, password, email } = body;
-    try {
-      const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
-      if (user[0]) return status(409, "User already exists");
-
-      const hashedPassword = await Bun.password.hash(password);
-      console.log(hashedPassword)
-      const newUser = {
-        username,
-        password: hashedPassword,
-        role: "user",
-        email
-      }
-      await sqlite`INSERT INTO users ${sqlite(newUser)}`
-      return status(201, { message: "Register Success" });
-    } catch (err) {
-      return status(500, { message: "Internal Server Error" });
-    }
-  }, {
-    body: t.Object({
-      username: t.String({ minLength: 6 }),
-      password: t.String({ minLength: 6 }),
-      email: t.String({ format: "email" })
-    })
   })
