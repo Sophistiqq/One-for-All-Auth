@@ -44,14 +44,12 @@ export const auth = new Elysia()
       password: t.String({ minLength: 1 })
     })
   })
-  .get('/auth/me', async ({ jwt_token, cookie: { auth_cookie }, status }) => {
+  .get('/auth/me', async ({ status, user }) => {
     try {
-      const profile: any = await jwt_token.verify(auth_cookie.value as string)
-      const user = await sqlite`SELECT id, username, role, email FROM users WHERE id = ${profile.sub}`
+      const users = await sqlite`SELECT id, username, role, email FROM users WHERE id = ${user}`
+      if (!users[0]) return status(401, { message: "User not found" })
 
-      if (!user[0]) return status(401, { message: "User not found" })
-
-      return status(200, user[0])
+      return status(200, users[0])
     } catch (err) {
       return status(401, "Invalid token")
     }
@@ -59,7 +57,7 @@ export const auth = new Elysia()
     isAuth: true,
     cookie: t.Object({
       auth_cookie: t.String()
-    })
+    }),
   })
   .get('/auth/logout', async ({ cookie: { auth_cookie }, status }) => {
     auth_cookie.remove()

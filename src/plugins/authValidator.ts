@@ -14,9 +14,13 @@ export const validator = new Elysia()
     cookie: t.Object({
       auth_cookie: t.String()
     }),
-    async beforeHandle({ cookie: { auth_cookie }, status, jwt_token }) {
+    async resolve({ cookie: { auth_cookie }, status, jwt_token }) {
       const token = await jwt_token.verify(auth_cookie.value as string)
       console.log(token)
       if (!token) return status(401, "Unauthorized")
-    }
+
+      return {
+        user: token.sub
+      }
+    },
   })
