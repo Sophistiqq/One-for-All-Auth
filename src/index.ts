@@ -4,7 +4,6 @@ import { auth } from "./auth";
 import { validator } from "./plugins/authValidator";
 import cors from "@elysiajs/cors";
 
-
 const app = new Elysia()
   .use(cors())
   .use(auth)

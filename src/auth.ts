@@ -33,7 +33,7 @@ export const auth = new Elysia()
   .post("/auth/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
     const { username, password } = body;
     try {
-      const users = await sqlite`SELECT id, username, password, email FROM admin_table WHERE username = ${username}`;
+      const users = await sqlite`SELECT id, username, password, email, role FROM users WHERE username = ${username}`;
       const user = users[0];
       if (!user) {
         return status(404, "User not found")
@@ -50,14 +50,16 @@ export const auth = new Elysia()
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
       })
 
+
       auth_cookie.set({
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // or "none" always for dev
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
+
 
       return status(200, { message: "Login Success" });
     } catch (err) {
@@ -71,9 +73,9 @@ export const auth = new Elysia()
   })
 
   // user is from the auth middleware, it contains user's id - Check the middleware authValidator for more info
-  .get('/auth/me', async ({ status, user }) => {
+  .post('/auth/me', async ({ status, user }) => {
     try {
-      const users = await sqlite`SELECT id, username, email FROM admin_table WHERE id = ${user}`
+      const users = await sqlite`SELECT id, username, email FROM users WHERE id = ${user}`
       if (!users[0]) return status(401, { message: "User not found" })
 
       return status(200, users[0])
