@@ -3,10 +3,10 @@ import { sqlite } from "./dbconfig";
 import { validator } from "./plugins/authValidator";
 
 
-export const auth = new Elysia()
+export const auth = new Elysia({ prefix: "/auth" })
   // The auth middleware is required for all routes that require authentication, just apply isAuth: true
   .use(validator)
-  .post('/auth/register', async ({ body, status }) => {
+  .post('/register', async ({ body, status }) => {
     const { username, password, email } = body;
     try {
       const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
@@ -30,7 +30,7 @@ export const auth = new Elysia()
       email: t.String({ format: "email" })
     })
   })
-  .post("/auth/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
+  .post("/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
     const { username, password } = body;
     try {
       const users = await sqlite`SELECT id, username, password, email, role FROM users WHERE username = ${username}`;
@@ -73,7 +73,7 @@ export const auth = new Elysia()
   })
 
   // user is from the auth middleware, it contains user's id - Check the middleware authValidator for more info
-  .post('/auth/me', async ({ status, user }) => {
+  .post('/me', async ({ status, user }) => {
     try {
       const users = await sqlite`SELECT id, username, email FROM users WHERE id = ${user}`
       if (!users[0]) return status(401, { message: "User not found" })
@@ -88,7 +88,7 @@ export const auth = new Elysia()
       auth_cookie: t.String()
     }),
   })
-  .post('/auth/logout', async ({ cookie: { auth_cookie }, status }) => {
+  .post('/logout', async ({ cookie: { auth_cookie }, status }) => {
     auth_cookie.remove()
     return status(200, { message: "Logout Success" })
   }, {
