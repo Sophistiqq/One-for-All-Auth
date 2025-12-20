@@ -1,5 +1,5 @@
 {
-  "name": "Backy",
+  "name": "All-in-one-Backend",
   "version": "1.0.50",
   "scripts": {
     "dev": "bun run --watch src/index.ts"
