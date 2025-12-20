@@ -12,14 +12,14 @@ export const validator = new Elysia()
   }))
   .macro("isAuth", {
     cookie: t.Object({
-      auth_cookie: t.String()
+      auth_cookie: t.Optional(t.String())
     }),
     async resolve({ cookie: { auth_cookie }, status, jwt_token }) {
       const token = await jwt_token.verify(auth_cookie.value as string)
-      if (!token) return status(401, "Unauthorized")
+      if (!token) return status(401, "Please login to continue.")
 
       return {
         user: token.sub
       }
-    },
+    }
   })
