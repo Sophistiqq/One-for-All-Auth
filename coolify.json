@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "name": "AIO",
+  "build": {
+    "type": "nixpacks",
+    "install_command": "bun install",
+    "build_command": "bun build \
+    --compile \
+    --minify-whitespace \
+    --minify-syntax \
+    --target bun \
+    --outfile server \
+    src/index.ts",
+    "start_command": "./server"
+  },
+  "domains": {
+    "ports_exposes": "3000"
+  }
+}
