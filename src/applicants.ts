@@ -43,3 +43,6 @@ export const applicants = new Elysia({ prefix: "/applicants" })
       willing_to_relocate: t.Boolean({ default: false }),
     })
   })
+
+
+
