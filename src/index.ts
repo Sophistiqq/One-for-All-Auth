@@ -15,7 +15,11 @@ const app = new Elysia()
   .use(validator)
   .use(job_postings)
   .use(applicants)
+  .get("/health", ({status}) => {
+    return status(200)
+  })
   .get("/", () => "Hello Elysia", { isAuth: true })
+  
 
   .listen(PORT);
 
