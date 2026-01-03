@@ -6,10 +6,10 @@ import { job_postings } from "./job_postings";
 import cors from "@elysiajs/cors";
 import { applicants } from "./applicants";
 
+const PORT = process.env.PORT || 3000;
+
 const app = new Elysia()
-  .use(cors({
-    origin: "http://localhost:5173"
-  }))
+  .use(cors())
   .use(swagger())
   .use(auth)
   .use(validator)
@@ -17,7 +17,7 @@ const app = new Elysia()
   .use(applicants)
   .get("/", () => "Hello Elysia", { isAuth: true })
 
-  .listen(3000);
+  .listen(PORT);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
