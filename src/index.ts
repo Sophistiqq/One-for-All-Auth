@@ -16,6 +16,7 @@ const app = new Elysia()
   .use(job_postings)
   .use(applicants)
   .get("/health", ({status}) => {
+    console.log('health hit: ',Date.now())
     return status(200)
   })
   .get("/", () => "Hello Elysia", { isAuth: true })
