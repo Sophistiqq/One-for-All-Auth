@@ -82,7 +82,3 @@ src/
 ### Adding New Modules
 
 While this is primarily an Auth Backend, it is extensible. You can mount new controllers in `index.ts` alongside the auth module if you need specific logic (like HR or Job Postings) to live in the same instance.
-
-```
-
-### Would you like me to create a helper file (e.g., a simple frontend SDK or fetch wrapper) that shows how your other projects can easily connect to this backend?
