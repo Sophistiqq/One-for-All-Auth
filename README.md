@@ -1,196 +1,88 @@
-Here is a clean, professional `README.md` tailored for GitHub. It focuses strictly on the authentication architecture and ignores the HR/Applicant logic as requested.
 
----
+# All-In-One (AIO) Central Auth Backend
 
-```markdown
-# Elysia + Bun Authentication Module
+This project serves as the **Centralized Authentication Service** for my ecosystem of applications. 
 
-A high-performance, secure authentication backend built with [Bun](https://bun.sh) and [ElysiaJS](https://elysiajs.com). This module implements a complete JWT-based auth flow with HTTP-only cookies, password hashing, and custom route protection macros.
+Instead of rewriting authentication logic for every new project (HR systems, Applicant trackers, internal tools), this backend acts as the single source of truth for **User Management, Identity Verification, and Session Handling**.
 
-## ⚡ Features
+## 🎯 Purpose & Architecture
 
-- **Runtime**: Native Bun runtime for high-speed execution.
-- **Security**:
-  - Passwords hashed using `Bun.password` (Argon2 default).
-  - JWTs stored in **HTTP-Only, Secure Cookies** (prevents XSS access).
-  - CSRF protection via SameSite cookie attributes.
-- **Database**: SQLite (via `bun:sqlite`) for lightweight, zero-config storage.
-- **Developer Experience**:
-  - Custom Elysia **Macro** (`isAuth`) for protecting routes with a single flag.
-  - Swagger/OpenAPI documentation auto-generation.
+This is designed to be a "plug-and-play" auth server. Your other frontend applications or services simply consume the API provided by this project to log users in and verify who they are.
 
-## 🛠️ Installation
+* **Central User Database:** All users across different modules are stored here.
+* **Unified Session Management:** Handles JWT generation, secure HTTP-only cookies, and session validation.
+* **Reusable Middleware:** Provides a consistent way to protect routes across different endpoints.
 
-1. **Prerequisites**: Ensure you have [Bun](https://bun.sh) installed.
-   ```bash
-   curl -fsSL [https://bun.sh/install](https://bun.sh/install) | bash
+## ⚡ Tech Stack
 
-```
+* **Runtime:** [Bun](https://bun.sh) (for ultra-fast startup and native password hashing).
+* **Framework:** [ElysiaJS](https://elysiajs.com) (Edge-compatible, ergonomic web framework).
+* **Database:** SQLite (Embedded, zero-latency).
+* **Security:** Argon2 hashing & Secure/HttpOnly Cookies.
 
-2. **Clone & Install**:
+## 🚀 Getting Started
+
+### 1. Installation
+Clone the repository and install dependencies:
 ```bash
-git clone <your-repo-url>
-cd <your-project-folder>
 bun install
 
 ```
 
+### 2. Run the Service
 
-3. **Run Development Server**:
+Start the central backend server:
+
 ```bash
 bun run dev
 
 ```
 
+The service will be live at `http://localhost:3000`.
 
-The server will start at `http://localhost:3000`.
+> **Note:** On the first run, it will automatically create the `database.db` and seed an admin user.
+> * **User:** `admin`
+> * **Pass:** `password`
+> 
+> 
 
-## 🗄️ Database & Seeding
+## 🔗 Integration Guide
 
-The project uses a local SQLite database (`database.db`). On the first run, it automatically creates the `users` table and seeds a default **Admin** user.
+### Base URL: `http://localhost:3000/auth`
 
-**Default Credentials:**
+Any external application (e.g., your HR Dashboard) should direct authentication requests here.
 
-* **Username:** `admin`
-* **Password:** `password`
+| Action | Endpoint | Method | Payload | Description |
+| --- | --- | --- | --- | --- |
+| **Login** | `/auth/login` | `POST` | `{username, password}` | Validates creds & sets the `auth_cookie` on the client. |
+| **Verify** | `/auth/me` | `POST` | *(Cookie)* | Call this on your app load to check if the user is logged in. |
+| **Register** | `/auth/register` | `POST` | `{username, password, email}` | Creates a new user in the central DB. |
+| **Logout** | `/auth/logout` | `POST` | *(Cookie)* | Clears the session. |
 
-### Schema (`users`)
+## 🛡️ Security Features
 
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, -- Hashed
-    role TEXT NOT NULL DEFAULT 'user',
-    created_at DATETIME,
-    updated_at DATETIME
-);
+1. **Secure Cookies:** Tokens are never sent to the client body (preventing XSS attacks). They are stored in `HttpOnly` cookies.
+2. **Native Hashing:** Uses `Bun.password` (Argon2) which is significantly faster and more secure than JavaScript-based implementations like bcrypt.js.
+3. **Role-Based Payload:** The JWT includes the user `role`, allowing downstream apps to easily handle permissions (Admin vs User).
 
-```
+## 🛠️ Development
 
-## 🔐 Authentication Endpoints
-
-Base URL: `/auth`
-
-### 1. Register
-
-Create a new user account.
-
-* **POST** `/register`
-* **Body:**
-```json
-{
-  "username": "jdoe123",
-  "password": "securePassword!",
-  "email": "john@example.com"
-}
-
-```
-
-
-
-### 2. Login
-
-Authenticates the user and sets the `auth_cookie`.
-
-* **POST** `/login`
-* **Body:**
-```json
-{
-  "username": "jdoe123",
-  "password": "securePassword!"
-}
-
-```
-
-
-* **Response:** `200 OK` (Set-Cookie header present)
-
-### 3. Get Current User (Protected)
-
-Retrieves the profile of the currently logged-in user.
-
-* **POST** `/me`
-* **Headers:** Requires valid Cookie.
-* **Response:**
-```json
-{
-  "id": 1,
-  "username": "admin",
-  "email": "admin@example.com"
-}
-
-```
-
-
-
-### 4. Logout
-
-Invalidates the session by removing the cookie.
-
-* **POST** `/logout`
-
-## 🛡️ Protecting Routes (Developer Guide)
-
-This project uses a custom Elysia **Macro** defined in `src/plugins/authValidator.ts`. You do not need to manually verify tokens in your handlers.
-
-To protect a route, simply add `{ isAuth: true }` to the route configuration.
-
-### Example Usage:
-
-```typescript
-import { Elysia } from "elysia";
-import { validator } from "./plugins/authValidator";
-
-export const myProtectedRoutes = new Elysia()
-  .use(validator) // 1. Register the plugin
-  
-  // Public Route
-  .get("/public", () => "Hello World")
-  
-  // Protected Route
-  .get("/dashboard", ({ user }) => {
-    // 'user' contains the User ID extracted from the token
-    return `Welcome back, user ${user}`;
-  }, { 
-    isAuth: true // 2. Enable protection
-  });
-
-```
-
-## 📂 Project Structure (Auth Only)
+### Project Structure
 
 ```
 src/
-├── auth.ts                 # Auth routes (login, register, me)
-├── dbconfig.ts             # DB connection, schema setup, & seeders
-├── index.ts                # App entry point
-└── plugins/
-    └── authValidator.ts    # JWT config & 'isAuth' macro logic
+├── auth.ts              # Core Authentication Logic
+├── dbconfig.ts          # Central Database & Schema Definitions
+├── plugins/
+│   └── authValidator.ts # JWT Validation Strategy
+└── index.ts             # Entry Point
 
 ```
 
-## ⚠️ Configuration Note
+### Adding New Modules
 
-Currently, the JWT secret is set to `"Roi"` in `src/plugins/authValidator.ts`. For production, ensure you move this to an environment variable:
-
-```typescript
-// .env
-JWT_SECRET="your-super-secure-secret"
-
-// src/plugins/authValidator.ts
-.use(jwt({
-    secret: process.env.JWT_SECRET!,
-    ...
-}))
+While this is primarily an Auth Backend, it is extensible. You can mount new controllers in `index.ts` alongside the auth module if you need specific logic (like HR or Job Postings) to live in the same instance.
 
 ```
 
-```
-
-### Would you like me to help you extract the `JWT_SECRET` into a `.env` file to make the project production-ready?
-
-```
+### Would you like me to create a helper file (e.g., a simple frontend SDK or fetch wrapper) that shows how your other projects can easily connect to this backend?
