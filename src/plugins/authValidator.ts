@@ -23,3 +23,15 @@ export const validator = new Elysia()
       }
     }
   })
+  .macro("isAdmin", {
+    async resolve({ cookie: { auth_cookie }, status, jwt_token }) {
+      const token = await jwt_token.verify(auth_cookie.value as string)
+      if (!token) return status(401, "Please login to continue.")
+
+      if (token.role !== "admin") return status(401, "You are not authorized to access this route.")
+
+      return {
+        user: token.sub
+      }
+    }
+  })

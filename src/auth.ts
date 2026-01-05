@@ -7,7 +7,7 @@ export const auth = new Elysia({ prefix: "/auth" })
   // The auth middleware is required for all routes that require authentication, just apply isAuth: true
   .use(validator)
   .post('/register', async ({ body, status }) => {
-    const { username, password, email } = body;
+    const { username, password, email, first_name, last_name } = body;
     try {
       const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
       if (user[0]) return status(409, "User already exists");
@@ -16,17 +16,22 @@ export const auth = new Elysia({ prefix: "/auth" })
       const newUser = {
         username,
         password: hashedPassword,
+        first_name,
+        last_name,
         email
       }
       await sqlite`INSERT INTO users ${sqlite(newUser)}`
       return status(201, { message: "Register Success" });
     } catch (err) {
+      console.log(err);
       return status(500, { message: "Internal Server Error" });
     }
   }, {
     body: t.Object({
       username: t.String({ minLength: 6 }),
       password: t.String({ minLength: 6 }),
+      first_name: t.String({ minLength: 1 }),
+      last_name: t.String({ minLength: 1 }),
       email: t.String({ format: "email" })
     })
   })
@@ -84,9 +89,6 @@ export const auth = new Elysia({ prefix: "/auth" })
     }
   }, {
     isAuth: true,
-    cookie: t.Object({
-      auth_cookie: t.String()
-    }),
   })
   .post('/logout', async ({ cookie: { auth_cookie }, status }) => {
     auth_cookie.remove()
