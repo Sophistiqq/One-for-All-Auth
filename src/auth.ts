@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia"
-import { sqlite } from "./dbconfig";
 import { validator } from "./plugins/authValidator";
 import { prisma } from "../lib/prisma";
 
@@ -11,9 +10,15 @@ export const auth = new Elysia({ prefix: "/auth" })
     const { username, password, email, first_name, last_name } = body;
     try {
       // const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
-      const user = await prisma.user.findFirst()
-      console.log(user)
-      if (user) return status(409, "User already exists");
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { username },
+            { email }
+          ]
+        }
+      });
+      if (existingUser) return status(409, "User already exists");
 
       const hashedPassword = await Bun.password.hash(password);
       const newUser = {
@@ -28,8 +33,7 @@ export const auth = new Elysia({ prefix: "/auth" })
       })
       return status(201, { message: "Register Success" });
     } catch (err) {
-      console.log(err);
-      return status(500, { message: "Internal Server Error" });
+      return status(500, { message: "Internal Server Error: " + err });
     }
   }, {
     body: t.Object({
@@ -46,7 +50,6 @@ export const auth = new Elysia({ prefix: "/auth" })
       const user = await prisma.user.findFirst({
         where: { username}
       });
-      console.log(user)
       if (!user) {
         return status(404, "User not found")
       }
@@ -58,7 +61,7 @@ export const auth = new Elysia({ prefix: "/auth" })
 
       const token = await jwt_token.sign({
         sub: user.id.toString(),
-        role: user.role,
+        role: user.role || 'user',
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
       })
 
@@ -75,7 +78,7 @@ export const auth = new Elysia({ prefix: "/auth" })
 
       return status(200, { message: "Login Success" });
     } catch (err) {
-      return status(500, { message: "Internal Server Error" });
+      return status(500, { message: "Internal Server Error" + err });
     }
   }, {
     body: t.Object({
@@ -88,7 +91,10 @@ export const auth = new Elysia({ prefix: "/auth" })
   .post('/me', async ({ status, user }) => {
     try {
       const users = await prisma.user.findFirst({ 
-        where: { id: user}
+        where: { id: user},
+        omit: {
+          password: true
+        }
       })
       
       if (!user) return status(401, { message: "User not found" })
