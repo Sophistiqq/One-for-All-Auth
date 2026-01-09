@@ -1,18 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-    provider = "prisma-client"
-    output = "../generated/prisma"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-    provider = "sqlite"
+  provider = "sqlite"
+}
+
+generator prismabox {
+  provider                    = "prismabox"
+  typeboxImportDependencyName = "elysia"
+  typeboxImportVariableName   = "t"
+  inputModel                  = true
+  output                      = "../generated/prismabox"
 }
 
 model User {
-    id Int @id @default(autoincrement())
-    first_name String
-    last_name String
-    email String @unique
-    username String @unique
-    password String
-    role String? @default("user")
+  id         Int     @id @default(autoincrement())
+  first_name String
+  last_name  String
+  email      String  @unique
+  username   String  @unique
+  password   String
+  role       String? @default("user")
+  posts      Posts[]
+}
+
+model Posts {
+  id     Int    @id @default(autoincrement())
+  title  String
+  user   User?  @relation(fields: [userId], references: [id])
+  userId Int?
 }

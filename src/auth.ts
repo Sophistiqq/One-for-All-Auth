@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { validator } from "./plugins/authValidator";
 import { prisma } from "../lib/prisma";
-
+import { User } from "../generated/prismabox/User";
 
 export const auth = new Elysia({ prefix: "/auth" })
   // The auth middleware is required for all routes that require authentication, just apply isAuth: true
@@ -36,13 +36,7 @@ export const auth = new Elysia({ prefix: "/auth" })
       return status(500, { message: "Internal Server Error: " + err });
     }
   }, {
-    body: t.Object({
-      username: t.String({ minLength: 6 }),
-      password: t.String({ minLength: 6 }),
-      first_name: t.String({ minLength: 1 }),
-      last_name: t.String({ minLength: 1 }),
-      email: t.String({ format: "email" })
-    })
+    body: User
   })
   .post("/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
     const { username, password } = body;
