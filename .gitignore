@@ -45,3 +45,4 @@ codebase.md
 server
 
 .env
+*.db
