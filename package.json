@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "generate-prisma": "bun prisma init --datasource-provider sqlite --output ../generated/prisma",
+    "migrate": "bun prisma migrate dev --name init && bun prisma generate",
     "build": "bun install && bun build --compile --minify-whitespace --minify-syntax --target bun --outfile server src/index.ts",
     "start": "./server"
   },

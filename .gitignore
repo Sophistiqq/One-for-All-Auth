@@ -44,5 +44,4 @@ package-lock.json
 codebase.md
 server
 
-/generated/prisma
 .env
