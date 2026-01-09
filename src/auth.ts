@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia"
 import { sqlite } from "./dbconfig";
 import { validator } from "./plugins/authValidator";
+import { prisma } from "../lib/prisma";
 
 
 export const auth = new Elysia({ prefix: "/auth" })
@@ -9,8 +10,10 @@ export const auth = new Elysia({ prefix: "/auth" })
   .post('/register', async ({ body, status }) => {
     const { username, password, email, first_name, last_name } = body;
     try {
-      const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
-      if (user[0]) return status(409, "User already exists");
+      // const user = await sqlite`SELECT id FROM users WHERE username = ${username}`;
+      const user = await prisma.user.findFirst()
+      console.log(user)
+      if (user) return status(409, "User already exists");
 
       const hashedPassword = await Bun.password.hash(password);
       const newUser = {
@@ -20,7 +23,9 @@ export const auth = new Elysia({ prefix: "/auth" })
         last_name,
         email
       }
-      await sqlite`INSERT INTO users ${sqlite(newUser)}`
+      await prisma.user.create({
+        data: newUser
+      })
       return status(201, { message: "Register Success" });
     } catch (err) {
       console.log(err);
@@ -38,8 +43,10 @@ export const auth = new Elysia({ prefix: "/auth" })
   .post("/login", async ({ body, status, jwt_token, cookie: { auth_cookie } }) => {
     const { username, password } = body;
     try {
-      const users = await sqlite`SELECT id, username, password, email, role FROM users WHERE username = ${username}`;
-      const user = users[0];
+      const user = await prisma.user.findFirst({
+        where: { username}
+      });
+      console.log(user)
       if (!user) {
         return status(404, "User not found")
       }
@@ -50,7 +57,7 @@ export const auth = new Elysia({ prefix: "/auth" })
       }
 
       const token = await jwt_token.sign({
-        sub: user.id,
+        sub: user.id.toString(),
         role: user.role,
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
       })
@@ -80,16 +87,20 @@ export const auth = new Elysia({ prefix: "/auth" })
   // user is from the auth middleware, it contains user's id - Check the middleware authValidator for more info
   .post('/me', async ({ status, user }) => {
     try {
-      const users = await sqlite`SELECT id, username, email FROM users WHERE id = ${user}`
-      if (!users[0]) return status(401, { message: "User not found" })
+      const users = await prisma.user.findFirst({ 
+        where: { id: user}
+      })
+      
+      if (!user) return status(401, { message: "User not found" })
 
-      return status(200, users[0])
+      return status(200, users)
     } catch (err) {
       return status(401, "Invalid token")
     }
   }, {
-    isAuth: true,
+    isAuth: true
   })
+
   .post('/logout', async ({ cookie: { auth_cookie }, status }) => {
     auth_cookie.remove()
     return status(200, { message: "Logout Success" })
