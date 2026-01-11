@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia"
 import { validator } from "./plugins/authValidator";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../prisma/lib/prisma";
 import { User } from "../generated/prismabox/User";
 
 export const auth = new Elysia({ prefix: "/auth" })
@@ -42,7 +42,7 @@ export const auth = new Elysia({ prefix: "/auth" })
     const { username, password } = body;
     try {
       const user = await prisma.user.findFirst({
-        where: { username}
+        where: { username }
       });
       if (!user) {
         return status(404, "User not found")
@@ -84,13 +84,12 @@ export const auth = new Elysia({ prefix: "/auth" })
   // user is from the auth middleware, it contains user's id - Check the middleware authValidator for more info
   .post('/me', async ({ status, user }) => {
     try {
-      const users = await prisma.user.findFirst({ 
-        where: { id: user},
+      const users = await prisma.user.findFirst({
+        where: { id: user },
         omit: {
           password: true
         }
       })
-      
       if (!user) return status(401, { message: "User not found" })
 
       return status(200, users)
