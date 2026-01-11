@@ -47,5 +47,3 @@ server
 .env
 *.db
 generated/
-
-/src/generated/prisma

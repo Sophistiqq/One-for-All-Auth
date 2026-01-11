@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia"
 import { validator } from "./plugins/authValidator";
-import { prisma } from "../prisma/lib/prisma";
+import { prisma } from "../lib/prisma";
 import { User } from "../generated/prismabox/User";
 
 export const auth = new Elysia({ prefix: "/auth" })
