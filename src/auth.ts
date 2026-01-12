@@ -69,7 +69,7 @@ export const auth = new Elysia({ prefix: "/auth" })
         value: token,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // or "none" always for dev
+        sameSite: "none",
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
