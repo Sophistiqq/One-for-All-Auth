@@ -19,12 +19,12 @@ export const validator = new Elysia()
     }),
     async resolve({ cookie: { auth_cookie }, status, jwt_token }) {
       const token = await jwt_token.verify(auth_cookie.value as string)
-      if (!token) return status(401, "Please login to continue.")
+      if (!token) return status(401)
 
       // Parse the token.sub into a number
       const userId = Number(token.sub)
       if (!Number.isInteger(userId)) {
-        return status(401, "Invalid user id.")
+        return status(400)
       }
       return {
         user: userId
@@ -34,13 +34,13 @@ export const validator = new Elysia()
   .macro("isAdmin", {
     async resolve({ cookie: { auth_cookie }, status, jwt_token }) {
       const token = await jwt_token.verify(auth_cookie.value as string)
-      if (!token) return status(401, "Please login to continue.")
+      if (!token) return status(401)
 
-      if (token.role !== "admin") return status(401, "You are not authorized to access this route.")
+      if (token.role !== "admin") return status(401)
       // Parse the token.sub into a number
       const userId = Number(token.sub)
       if (!Number.isInteger(userId)) {
-        return status(401, "Invalid user id.")
+        return status(400)
       }
       return {
         user: userId
