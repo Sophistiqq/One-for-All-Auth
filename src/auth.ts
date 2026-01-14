@@ -64,8 +64,6 @@ export const auth = new Elysia({ prefix: "/auth" })
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
       })
 
-
-      
       auth_cookie.set({
         value: token,
         httpOnly: true,
