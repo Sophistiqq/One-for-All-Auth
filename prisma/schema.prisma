@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -29,4 +26,100 @@ model User {
   username   String  @unique
   password   String
   role       String? @default("user")
+}
+
+model Route {
+  id             Int      @id @default(autoincrement())
+  name           String // e.g., "Montalban-Cubao"
+  code           String   @unique // e.g., "MC-01"
+  description    String?
+  fare           Float // Base fare
+  color          String? // Hex color for map display
+  startTerminal  String // Terminal name
+  endTerminal    String // Terminal name
+  path           String? // GeoJSON LineString for route path
+  operatingHours String? // e.g., "5:00 AM - 10:00 PM"
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  vehicles Vehicle[]
+  stops    RouteStop[]
+}
+
+model Terminal {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // e.g., "Montalban Terminal", "Farmers Plaza"
+  latitude  Float
+  longitude Float
+  address   String?
+  type      String   @default("terminal") // terminal, stop
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  routeStops RouteStop[]
+}
+
+model RouteStop {
+  id         Int @id @default(autoincrement())
+  routeId    Int
+  terminalId Int
+  sequence   Int // Order in the route (1, 2, 3...)
+
+  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  terminal Terminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, terminalId])
+  @@index([routeId])
+}
+
+model Vehicle {
+  id          Int       @id @default(autoincrement())
+  plateNumber String    @unique
+  type        String // jeepney, uv_express, bus
+  capacity    Int // Number of passengers
+  routeId     Int?
+  status      String    @default("active") // active, inactive, maintenance
+  currentLat  Float?
+  currentLng  Float?
+  heading     Float? // Direction in degrees (0-360)
+  speed       Float? // km/h
+  lastUpdate  DateTime?
+  driverId    Int?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  route           Route?            @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  driver          Driver?           @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  locationHistory VehicleLocation[]
+
+  @@index([routeId])
+  @@index([status])
+}
+
+model VehicleLocation {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  latitude  Float
+  longitude Float
+  heading   Float?
+  speed     Float?
+  timestamp DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, timestamp])
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  phone     String   @unique
+  licenseNo String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  vehicles Vehicle[]
 }
