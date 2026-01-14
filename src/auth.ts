@@ -98,7 +98,7 @@ export const auth = new Elysia({ prefix: "/auth" })
 
       return status(200, users)
     } catch (err) {
-      return status(401, "Invalid token")
+      return status(401, `Invalid token: ${err}`)
     }
   }, {
     isAuth: true
