@@ -101,7 +101,7 @@ export const auth = new Elysia({ prefix: "/auth" })
       return status(401, `Invalid token: ${err}`)
     }
   }, {
-    isAuth: false
+    isAuth: true
   })
 
   .post('/logout', async ({ cookie: { auth_cookie }, status }) => {
