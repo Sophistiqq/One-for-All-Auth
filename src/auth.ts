@@ -64,11 +64,14 @@ export const auth = new Elysia({ prefix: "/auth" })
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
       })
 
+      const isProduction = process.env.NODE_ENV === 'production';
+      const isDevelopment = !isProduction;
+
       auth_cookie.set({
         value: token,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+        secure: isProduction, // false locally (http://localhost), true in production (https)
+        sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin (prod), 'lax' for same-origin (local)
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
