@@ -107,8 +107,19 @@ export const auth = new Elysia({ prefix: "/auth" })
   })
 
   .post('/logout', async ({ cookie: { auth_cookie }, status }) => {
-    auth_cookie.remove()
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Set cookie with maxAge: 0 to expire it immediately
+    auth_cookie.set({
+      value: '',
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: "/",
+      maxAge: 0, // This expires the cookie immediately
+    });
+    
     return status(200, { message: "Logout Success" })
-  }, {
+}, {
     isAuth: true
-  })
+})
