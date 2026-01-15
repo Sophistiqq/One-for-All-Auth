@@ -65,19 +65,18 @@ export const auth = new Elysia({ prefix: "/auth" })
       })
 
       const isProduction = process.env.NODE_ENV === 'production';
-      const isDevelopment = !isProduction;
 
       auth_cookie.set({
         value: token,
         httpOnly: true,
-        secure: isProduction, // false locally (http://localhost), true in production (https)
-        sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin (prod), 'lax' for same-origin (local)
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
 
 
-      return status(200, { message: "Login Success" });
+      return status(200, { message: "Login Success", user: user });
     } catch (err) {
       return status(500, { message: "Internal Server Error" + err });
     }
